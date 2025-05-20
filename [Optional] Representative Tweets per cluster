@@ -1,0 +1,5 @@
+for c in sorted(merged_df["cluster"].unique()):
+    print(f"\n🔹 Cluster {c} — Sample Tweets:")
+    samples = merged_df[merged_df["cluster"] == c].iloc[:5, 0]  # First 5 tweets
+    for tweet in samples:
+        print("-", tweet)
