@@ -1,0 +1,14 @@
+import pandas as pd
+
+# Load the cluster-labeled file (full cleaned text + cluster label)
+clustered_df = pd.read_csv("clustered_tweets_agglomerative.csv", encoding="utf-8-sig")
+
+# Load the tokenized version (one column: tokenized tweet as string)
+tokens_df = pd.read_csv("Twitter_TOKENS.csv", encoding="utf-8-sig")
+
+# Combine based on row index (assumes same order)
+merged_df = clustered_df.copy()
+merged_df["tokens"] = tokens_df.iloc[:, 0]
+
+# Optional: save merged version
+merged_df.to_csv("merged_clustered_tokenized.csv", index=False, encoding="utf-8-sig")
