@@ -1,0 +1,16 @@
+import pandas as pd
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.metrics import silhouette_score
+
+# Load reduced embeddings
+df = pd.read_csv("reduced_embeddings.csv", encoding="utf-8-sig")
+
+# Extract only the reduced dimensions (not the original tweet)
+X = df.iloc[:, 1:].values
+
+# Try clustering with k = 3 to 6
+for k in range(3, 7):
+    clusterer = AgglomerativeClustering(n_clusters=k)
+    labels = clusterer.fit_predict(X)
+    score = silhouette_score(X, labels)
+    print(f"Silhouette Score for k={k}: {score:.4f}")
