@@ -1,0 +1,32 @@
+import pandas as pd
+import umap
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load clustered reduced embeddings
+df = pd.read_csv("clustered_tweets_agglomerative.csv", encoding="utf-8-sig")
+
+# Extract embeddings (just PCs) and cluster labels
+X = df.iloc[:, 1:-1].values  # all PC columns (assuming text is first, cluster is last)
+labels = df["cluster"]
+
+# Fit UMAP
+reducer = umap.UMAP(random_state=42)
+embedding_2d = reducer.fit_transform(X)
+
+# Create DataFrame for visualization
+umap_df = pd.DataFrame({
+    "x": embedding_2d[:, 0],
+    "y": embedding_2d[:, 1],
+    "cluster": labels
+})
+
+# Plot
+plt.figure(figsize=(10, 7))
+sns.scatterplot(data=umap_df, x="x", y="y", hue="cluster", palette="Set2", s=50)
+plt.title("UMAP Projection of Tweet Clusters")
+plt.xlabel("UMAP-1")
+plt.ylabel("UMAP-2")
+plt.legend(title="Cluster")
+plt.tight_layout()
+plt.show()
