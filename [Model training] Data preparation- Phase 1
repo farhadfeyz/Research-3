@@ -1,0 +1,47 @@
+import pandas as pd
+from transformers import XLMRobertaTokenizer
+from sklearn.model_selection import train_test_split
+import torch
+from torch.utils.data import Dataset, DataLoader
+
+# 1. Load and inspect data
+try:
+    df = pd.read_csv("PersianTwitterDataset.csv", encoding="utf-8")
+    print("Columns found:", df.columns.tolist())
+    print("Unique sentiments:", df['Sentiment'].unique())
+except Exception as e:
+    raise FileNotFoundError(f"Error loading data: {str(e)}")
+
+# 2. Clean and validate
+required_cols = ['Tweets', 'Sentiment']
+if not all(col in df.columns for col in required_cols):
+    raise ValueError(f"Missing required columns. Needed: {required_cols}")
+
+df = df[required_cols].dropna().copy()
+
+# Normalize sentiment labels (handle case variations)
+df['Sentiment'] = df['Sentiment'].str.strip().str.capitalize()
+valid_sentiments = ["Positive", "Negative", "Neutral"]
+df = df[df['Sentiment'].isin(valid_sentiments)]
+
+if len(df) == 0:
+    raise ValueError("No valid samples remaining after filtering!")
+
+# 3. Label encoding
+label_map = {v: k for k, v in enumerate(valid_sentiments)}
+df["label"] = df["Sentiment"].map(label_map)
+
+# 4. Proceed with split only if data exists
+if len(df) > 0:
+    train_texts, val_texts, train_labels, val_labels = train_test_split(
+        df["Tweets"].tolist(),
+        df["label"].tolist(),
+        test_size=0.1,
+        random_state=42,
+        stratify=df["label"]
+    )
+    print(f"Train/val split successful. Samples: {len(train_texts)}/{len(val_texts)}")
+else:
+    raise ValueError("No data available for splitting!")
+
+# Rest of your code continues...
