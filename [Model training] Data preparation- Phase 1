@@ -6,7 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 
 # 1. Load and inspect data
 try:
-    df = pd.read_csv("PersianTwitterDataset.csv", encoding="utf-8")
+    df = pd.read_csv("PersianTwitterDataset_Remapped.csv", encoding="utf-8")
     print("Columns found:", df.columns.tolist())
     print("Unique sentiments:", df['Sentiment'].unique())
 except Exception as e:
