@@ -1,0 +1,17 @@
+import pandas as pd
+
+# Load both DataFrames
+clustered_df = pd.read_csv("merged_clustered_tokenized.csv", encoding="utf-8-sig")
+sentiment_df = pd.read_csv("Twitter_CLEANED_with_Sentiment.csv", encoding="utf-8-sig")
+
+# Merge on 'Cleaned_Text'
+merged_df = pd.merge(clustered_df, sentiment_df[['Cleaned_Text', 'Sentiment_Label']],
+                     on='Cleaned_Text', how='left')
+
+# Check for missing sentiment entries
+missing_sentiment = merged_df['Sentiment_Label'].isna().sum()
+print(f"Rows with missing sentiment labels: {missing_sentiment}")
+
+# Save the merged version for next steps
+merged_df.to_csv("clustered_with_sentiment.csv", index=False, encoding="utf-8-sig")
+print("✅ Merged dataset saved as 'clustered_with_sentiment.csv'")
