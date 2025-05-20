@@ -1,0 +1,37 @@
+import pandas as pd
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+from tqdm import tqdm
+
+# Load tokenizer and model (adjust if already loaded in your environment)
+tokenizer = AutoTokenizer.from_pretrained("farhadfeyz/Persian-XLM-RoBERTa-Sentiment")
+model = AutoModelForSequenceClassification.from_pretrained("farhadfeyz/Persian-XLM-RoBERTa-Sentiment")
+
+# Create sentiment pipeline
+sentiment_pipeline = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer, device=-1)  # CPU
+
+# Load your cleaned tweets CSV
+df = pd.read_csv("Twitter_CLEANED.csv")  # Adjust path if needed
+# Assuming your cleaned text column is named 'cleaned_text' (change if different)
+texts = df["cleaned_text"].astype(str).tolist()
+
+# Optional: Map model label to sentiment names (update after testing a few samples)
+label_map = {
+    "LABEL_0": "Positive",
+    "LABEL_1": "Negative",
+    "LABEL_2": "Neutral"
+}
+
+# Run sentiment analysis (use tqdm for progress bar)
+sentiments = []
+for text in tqdm(texts, desc="Analyzing sentiment"):
+    result = sentiment_pipeline(text[:512])  # Truncate to 512 tokens max for safety
+    label = result[0]["label"]
+    sentiments.append(label_map.get(label, label))  # fallback to raw label if not mapped
+
+# Append the sentiment labels to dataframe
+df["Sentiment_Label"] = sentiments
+
+# Save with new sentiment column
+df.to_csv("Twitter_CLEANED_with_Sentiment.csv", index=False, encoding="utf-8-sig")
+
+print("Done! Saved file: Twitter_CLEANED_with_Sentiment.csv")
