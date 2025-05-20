@@ -1,0 +1,14 @@
+from collections import Counter
+
+def get_top_keywords(df, cluster_id, top_n=10):
+    cluster_tokens = df[df["cluster"] == cluster_id]["tokens"]
+    all_tokens = " ".join(cluster_tokens).split()
+    counts = Counter(all_tokens)
+    return counts.most_common(top_n)
+
+# Example usage for each cluster
+for c in sorted(merged_df["cluster"].unique()):
+    top_words = get_top_keywords(merged_df, c, top_n=10)
+    print(f"\n🔹 Cluster {c} — Top Words:")
+    for word, freq in top_words:
+        print(f"{word}: {freq}")
