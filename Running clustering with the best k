@@ -1,0 +1,10 @@
+# Let's say k=4 looks best
+best_k = 4
+clusterer = AgglomerativeClustering(n_clusters=best_k)
+labels = clusterer.fit_predict(X)
+
+# Add cluster labels to the original data
+df["cluster"] = labels
+
+# Save with cluster labels
+df.to_csv("clustered_tweets_agglomerative.csv", index=False, encoding="utf-8-sig")
