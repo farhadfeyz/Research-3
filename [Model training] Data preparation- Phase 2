@@ -1,0 +1,62 @@
+# Continue from where we left off...
+
+# 5. Load tokenizer with error handling
+try:
+    tokenizer = XLMRobertaTokenizer.from_pretrained("xlm-roberta-base")
+except Exception as e:
+    raise RuntimeError(f"Failed to load tokenizer: {str(e)}")
+
+# 6. Enhanced tokenization with progress feedback
+def tokenize_texts(texts, description=""):
+    print(f"⏳ Tokenizing {description} texts...")
+    return tokenizer(
+        texts,
+        padding=True,
+        truncation=True,
+        max_length=128,
+        return_tensors="pt",
+        add_special_tokens=True
+    )
+
+train_encodings = tokenize_texts(train_texts, "training")
+val_encodings = tokenize_texts(val_texts, "validation")
+
+# 7. Dataset class with device awareness
+class SentimentDataset(Dataset):
+    def __init__(self, encodings, labels):
+        self.encodings = encodings
+        self.labels = torch.tensor(labels, dtype=torch.long)  # Explicit dtype
+    
+    def __len__(self):
+        return len(self.labels)
+    
+    def __getitem__(self, idx):
+        item = {key: val[idx].clone().detach() for key, val in self.encodings.items()}
+        item["labels"] = self.labels[idx]
+        return item
+
+# 8. Create datasets
+train_dataset = SentimentDataset(train_encodings, train_labels)
+val_dataset = SentimentDataset(val_encodings, val_labels)
+
+# 9. DataLoaders with pin_memory for GPU
+batch_size = 16
+train_loader = DataLoader(
+    train_dataset,
+    batch_size=batch_size,
+    shuffle=True,
+    pin_memory=True if torch.cuda.is_available() else False
+)
+val_loader = DataLoader(
+    val_dataset,
+    batch_size=batch_size,
+    pin_memory=True if torch.cuda.is_available() else False
+)
+
+# Final verification
+print(f"\n✅ Successfully prepared data:")
+print(f"- Training samples: {len(train_dataset)}")
+print(f"- Validation samples: {len(val_dataset)}")
+print(f"- Batch size: {batch_size}")
+print(f"- Using device: {'GPU' if torch.cuda.is_available() else 'CPU'}")
+print(f"- First training sample keys: {next(iter(train_dataset)).keys()}")
