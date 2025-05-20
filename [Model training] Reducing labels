@@ -1,0 +1,47 @@
+import pandas as pd
+
+# Load dataset
+df = pd.read_csv("PersianTwitterDataset.csv", encoding="utf-8")
+
+# Show columns and types
+print(df.columns)
+print(df.dtypes)
+
+# Rename columns if needed (sometimes 'Tweets' is misspelled or extra spaces)
+df.columns = [col.strip() for col in df.columns]
+
+# Inspect first rows to confirm columns
+print(df.head())
+
+# Check unique values in 'Label' column to verify label values
+print("Unique labels:", df["Label"].unique())
+
+# Keep only the Tweets and Label columns
+df = df[["Tweets", "Label"]]
+
+# Create mapping dictionary
+label_map_str = {
+    "Happy": "positive",
+    "Sad": "negative",
+    "Angry": "negative",
+    "Intense Emotions": "negative",
+    "Neutral": "neutral"
+}
+
+# Make sure 'Label' is integer type
+df["Label"] = df["Label"].astype(int)
+
+# Map labels to sentiments, create a new column "Sentiment"
+df["Sentiment"] = df["Label"].map(label_map)
+
+# Check if mapping worked
+print(df[["Label", "Sentiment"]].head(10))
+
+# Check for missing mapped values
+missing = df["Sentiment"].isnull().sum()
+print(f"Number of unmapped rows: {missing}")
+
+# Save the result
+df.to_csv("PersianTwitterDataset_Remapped.csv", index=False, encoding="utf-8")
+
+print("Remapping completed.")
