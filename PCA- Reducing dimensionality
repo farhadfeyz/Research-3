@@ -1,0 +1,21 @@
+import pandas as pd
+from sklearn.decomposition import PCA
+
+# Load the full embeddings file
+df = pd.read_csv("tokenized_tweets_with_embeddings.csv", encoding="utf-8-sig")
+
+# Extract only the embedding columns (assuming all but the first are embedding dimensions)
+embeddings = df.iloc[:, 1:].values  # Skip the first column (text)
+
+# Apply PCA
+pca = PCA(n_components=50, random_state=42)  # You can adjust components
+reduced = pca.fit_transform(embeddings)
+
+# Create a new DataFrame with reduced dimensions
+reduced_df = pd.DataFrame(reduced, columns=[f"PC{i+1}" for i in range(reduced.shape[1])])
+
+# Add back the original tweet text
+reduced_combined = pd.concat([df.iloc[:, [0]], reduced_df], axis=1)
+
+# Save to CSV
+reduced_combined.to_csv("reduced_embeddings.csv", index=False, encoding="utf-8-sig")
