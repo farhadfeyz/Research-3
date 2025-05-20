@@ -1,0 +1,93 @@
+import pandas as pd
+import re
+from hazm import Normalizer, WordTokenizer, Lemmatizer
+
+# Initialize Hazm
+normalizer = Normalizer()
+tokenizer = WordTokenizer()
+lemmatizer = Lemmatizer()
+
+# --- STOPWORDS SETUP ---
+with open('persian_stopwords_backup.txt', 'r', encoding='utf-8') as f:
+    persian_stopwords = [line.strip() for line in f]
+
+# Add missing terms
+persian_stopwords += [
+    'استارتاپ', 'استارتاپها', 'استارتاپ‌ها', 
+    'آینده', 'اسلامی', 'خدا', 'خوانم', 'خوانید', 'داند', 
+    'رسد', 'رضای', 'رود', 'محض', 'هام', 'کنایه', 'علاقه'
+]
+
+# --- CLEANING FUNCTIONS ---
+def clean_text(text):
+    """Comprehensive text cleaning without tokenization"""
+    # Remove URLs, mentions
+    text = re.sub(r'https?://\S+|www\.\S+|@\w+', '', text)
+    # Remove hashtags and special characters
+    text = re.sub(r'#[\w\u0600-\u06FF]+', '', text)  
+    text = re.sub(r'[^\u0600-\u06FF\s]', '', text)
+    # Handle special Persian characters
+    text = re.sub(r'[\u200c\u200f]', ' ', text)
+    # Collapse spaces
+    return re.sub(r'\s+', ' ', text).strip()
+
+def clean_token_list(tokens):
+    """Token-level cleaning"""
+    cleaned = []
+    skip_next = False
+    
+    for token in tokens:
+        if skip_next:
+            skip_next = False
+            continue
+            
+        token = token.replace('\u200c', '')
+        
+        if '#' in token:
+            clean_part = token.split('#')[0]
+            if clean_part:
+                cleaned.append(clean_part)
+            skip_next = True
+        elif not token.startswith('استارتاپ'):
+            cleaned.append(token)
+            
+    return cleaned
+
+def tokenize_text(text):
+    """Full tokenization pipeline"""
+    normalized = normalizer.normalize(text)
+    tokens = tokenizer.tokenize(normalized)
+    lemmas = [lemmatizer.lemmatize(token) for token in tokens]
+    return clean_token_list(lemmas)
+
+# --- MAIN PROCESSING ---
+def process_dataset(input_file):
+    """Process dataset with dual outputs"""
+    df = pd.read_csv(input_file, encoding='utf-8')
+    
+    # 1. Clean only (no tokenization)
+    df['Cleaned_Text'] = df['text'].apply(clean_text)
+    
+    # 2. Clean + tokenize
+    df['Tokens'] = df['Cleaned_Text'].apply(tokenize_text)
+    df['Tokens'] = df['Tokens'].apply(
+        lambda tokens: [t for t in tokens if t not in persian_stopwords]
+    )
+    
+    # Prepare outputs
+    base_name = input_file.replace('.csv', '')
+    
+    # Output 1: Cleaned text only (CSV)
+    df[['Cleaned_Text']].to_csv(f'{base_name}_CLEANED.csv', index=False, encoding='utf-8-sig')
+    
+    # Output 2: Cleaned + tokenized (CSV)
+    df[['Tokens']].to_csv(f'{base_name}_TOKENS.csv', index=False, encoding='utf-8-sig')
+    
+    
+    print(f"✅ Saved: {base_name}_CLEANED.csv, {base_name}_TOKENS.csv")
+
+# --- EXECUTION ---
+if __name__ == '__main__':
+    datasets = ['Twitter.csv']  # Add your files here
+    for dataset in datasets:
+        process_dataset(dataset)
