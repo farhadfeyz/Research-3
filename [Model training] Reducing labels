@@ -4,44 +4,55 @@ import pandas as pd
 df = pd.read_csv("PersianTwitterDataset.csv", encoding="utf-8")
 
 # Show columns and types
-print(df.columns)
-print(df.dtypes)
+print("Original columns:", df.columns.tolist())
+print("\nData types:\n", df.dtypes)
 
-# Rename columns if needed (sometimes 'Tweets' is misspelled or extra spaces)
+# Clean column names
 df.columns = [col.strip() for col in df.columns]
 
-# Inspect first rows to confirm columns
+# Preview first rows
+print("\nFirst 5 rows:")
 print(df.head())
 
-# Check unique values in 'Label' column to verify label values
-print("Unique labels:", df["Label"].unique())
+# Check unique values in 'Label' column
+print("\nUnique labels:", df["Label"].unique())
 
-# Keep only the Tweets and Label columns
-df = df[["Tweets", "Label"]]
+# Keep only relevant columns
+df = df[["Tweets", "Label"]].copy()
 
-# Create mapping dictionary
+# Step 1: Map original labels to new string-based sentiment labels
 label_map_str = {
     "Happy": "positive",
-    "Sad": "negative",
+    "Sad": "negative", 
     "Angry": "negative",
     "Intense Emotions": "negative",
     "Neutral": "neutral"
 }
+df["new_labels"] = df["Label"].map(label_map_str)
 
-# Make sure 'Label' is integer type
-df["Label"] = df["Label"].astype(int)
+# Step 2: Map string-based labels to numeric values
+sentiment_to_num = {"positive": 0, "negative": 1, "neutral": 2}
+df["Sentiment"] = df["new_labels"].map(sentiment_to_num)
 
-# Map labels to sentiments, create a new column "Sentiment"
-df["Sentiment"] = df["Label"].map(label_map)
+# Verify both mappings
+print("\nMapped preview:")
+print(df[["Label", "new_labels", "Sentiment"]].head(10))
 
-# Check if mapping worked
-print(df[["Label", "Sentiment"]].head(10))
+# Check for any unmapped rows
+missing = df[df["Sentiment"].isnull()]
+if not missing.empty:
+    print("\n⚠️ Unmapped labels found:")
+    print(missing["Label"].unique())
+else:
+    print("\n✅ All labels mapped successfully.")
 
-# Check for missing mapped values
-missing = df["Sentiment"].isnull().sum()
-print(f"Number of unmapped rows: {missing}")
+# Save cleaned dataset
+output_path = "PersianTwitterDataset_Remapped.csv"
+df.to_csv(output_path, index=False, encoding="utf-8")
+print(f"\n✅ Saved cleaned data to: {output_path}")
 
-# Save the result
-df.to_csv("PersianTwitterDataset_Remapped.csv", index=False, encoding="utf-8")
-
-print("Remapping completed.")
+# Final distribution
+print("\n📊 Final class distribution (numeric):")
+print(df["Sentiment"].value_counts())
+print("\n📊 Final class distribution (string):")
+print(df["new_labels"].value_counts())
